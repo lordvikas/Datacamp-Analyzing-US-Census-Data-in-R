@@ -1,0 +1,470 @@
+kansas_missouri <- rbind_tigris(kansas, missouri)
+
+plot(kansas_missouri$geometry)
+
+Combining datasets with tidyverse tools
+library(tidyverse)
+
+new_england <- c("ME", "NH", "VT", "MA")
+ne_tracts <- map(new_england, function(x) {
+  tracts(state = x, cb = TRUE)
+}) %>%
+  rbind_tigris()
+  
+
+
+Joining data from a data frame
+library(tidyverse)
+library(sf)
+
+tx_house <- state_legislative_districts(state = "TX", 
+                                        house = "lower", 
+                                        cb = TRUE)
+tx_joined <- left_join(tx_house, 
+                       tx_members, 
+                       by = c("NAME" = "District"))
+
+glimpse(tx_joined)
+
+#Let's practice!
+
+# Get Census tract boundaries for Oregon and Washington
+or_tracts <- tracts("OR", cb = TRUE)
+wa_tracts <- tracts("WA", cb = TRUE)
+
+# Check the tigris attributes of each object
+attr(or_tracts, "tigris")
+attr(wa_tracts, "tigris")
+
+# Combine the datasets then plot the result
+or_wa_tracts <- rbind_tigris(or_tracts, wa_tracts)
+plot(or_wa_tracts$geometry)
+
+# Generate a vector of state codes and assign to new_england
+new_england <- c("ME", "NH", "VT", "MA")
+
+# Iterate through the states and request tract data for state
+ne_tracts <- map(new_england, function(x) {
+  tracts(state = x, cb = TRUE)
+}) %>%
+  rbind_tigris()
+
+plot(ne_tracts$geometry)
+
+# Get boundaries for Texas and set the house parameter
+tx_house <- state_legislative_districts(state = "TX", house = "lower", cb = TRUE)
+
+# Merge data on legislators to their corresponding boundaries
+tx_joined <- left_join(tx_house, tx_members, by = c("NAME" = "District"))
+
+head(tx_joined)
+
+
+#Plotting spatial data with geom_sf()
+ggplot(tx_joined) + 
+  geom_sf()
+
+#Setting the fill aesthetic for regions
+ggplot(tx_joined, aes(fill = Party)) + 
+  geom_sf()
+  
+#Customizing fill colors
+ggplot(tx_joined, aes(fill = Party)) + 
+  geom_sf() + 
+  scale_fill_manual(values = c("R" = "red", "D" = "blue"))  
+
+#Polishing up the output
+ggplot(tx_joined, aes(fill = Party)) + 
+  geom_sf() + 
+  coord_sf(crs = 3083, datum = NA) + 
+  scale_fill_manual(values = c("R" = "red", "D" = "blue")) + 
+  theme_minimal() + 
+  labs(title = "State House Districts in Texas")
+
+#Let's practice!
+# Plot the legislative district boundaries
+ggplot(tx_joined) + 
+  geom_sf()
+
+# Plot the legislative district boundaries
+ggplot(tx_joined) + 
+  geom_sf()
+
+# Set fill aesthetic to map areas represented by Republicans and Democrats
+ggplot(tx_joined, aes(fill = Party)) +   geom_sf()
+
+# Plot the legislative district boundaries
+ggplot(tx_joined) + 
+  geom_sf()
+
+# Set fill aesthetic to map areas represented by Republicans and Democrats
+ggplot(tx_joined, aes(fill = Party)) + 
+  geom_sf()
+
+# Set values so that Republican areas are red and Democratic areas are blue
+ggplot(tx_joined, aes(fill = Party)) +geom_sf() + 
+  scale_fill_manual(values = c("R" = "red", "D" = "blue"))
+  
+# Draw a ggplot without gridlines and with an informative title
+ggplot(tx_joined, aes(fill = Party)) + 
+  geom_sf() + 
+  coord_sf(crs = 3083, datum = NA) + 
+  scale_fill_manual(values = c("R" = "red", "D" = "blue")) + 
+  theme_minimal(base_size = 16) + 
+  labs(title = "State House Districts in Texas")
+  
+#Getting simple feature geometry
+library(tidycensus)
+library(tidyverse)
+library(sf)
+
+cook_value <- get_acs(geography = "tract", state = "IL", 
+                      county = "Cook", 
+                      variables = "B25077_001", 
+                      geometry = TRUE)
+
+
+head(cook_value, 3)
+
+#Plotting tidycensus geometry
+plot(cook_value["estimate"])
+
+#Joining tigris and tidycensus data
+library(tigris)
+
+idaho_income <- get_acs(geography = "school district (unified)", 
+                        variables = "B19013_001", 
+                        state = "ID")
+
+idaho_school <- school_districts(state = "ID", 
+                                 type = "unified", 
+                                 class = "sf")
+
+id_school_joined <- left_join(idaho_school, 
+                              idaho_income, 
+                              by = "GEOID")
+
+#Joining tigris and tidycensus data
+plot(id_school_joined["estimate"])
+
+#Shifting Alaska and Hawaii geometry
+state_value <- get_acs(geography = "state", 
+                       variables = "B25077_001", 
+                       survey = "acs1", 
+                       geometry = TRUE, 
+                       shift_geo = TRUE)
+plot(state_value["estimate"])
+
+#let's Practice
+library(tidycensus)
+library(tidyverse)
+library(sf)
+
+# Get dataset with geometry set to TRUE
+orange_value <- get_acs(geography = "tract", state = "CA", 
+                    county = "Orange", 
+                    variables = "B25077_001", 
+                    geometry  = TRUE)
+
+# Plot the estimate to view a map of the data
+plot(orange_value["estimate"])
+
+
+# Get an income dataset for Idaho by school district
+idaho_income <- get_acs(geography = "school district (unified)", 
+                        variables = "B19013_001", 
+                        state = "ID")
+
+# Get a school district dataset for Idaho
+idaho_school <- school_districts(state = "ID", type = "unified", class = "sf")
+
+# Join the income dataset to the boundaries dataset
+id_school_joined <- left_join(idaho_school, idaho_income, by = "GEOID")
+
+plot(id_school_joined["estimate"])
+
+# Get a dataset of median home values from the 1-year ACS
+state_value <- get_acs(geography = "state", 
+                       variables = "B25077_001", 
+                       survey = "acs1", 
+                       geometry = TRUE, 
+                       shift_geo = TRUE)
+
+# Plot the dataset to view the shifted geometry
+plot(state_value["estimate"])
+
+
+#tutorial
+#A basic choropleth map with geom_sf()
+library(ggplot2)
+
+ggplot(cook_value, aes(fill = estimate)) + 
+  geom_sf()
+
+
+#Modifying map colors
+ggplot(cook_value, aes(fill = estimate, color = estimate)) + 
+  geom_sf() + 
+  scale_fill_viridis_c() +  
+  scale_color_viridis_c()
+  
+#Customizing the map output
+ggplot(cook_value, aes(fill = estimate, color = estimate)) + 
+  geom_sf() + 
+  scale_fill_viridis_c(labels = scales::dollar) +  
+  scale_color_viridis_c(guide = FALSE) + 
+  theme_minimal() + 
+  coord_sf(crs = 26916, datum = NA) + 
+  labs(title = "Median home value by Census tract", 
+       subtitle = "Cook County, Illinois", 
+       caption = "Data source: 2012-2016 ACS.\nData acquired with the R 
+                  tidycensus package.", 
+       fill = "ACS estimate")
+       
+       
+#Let's practice!
+library(ggplot2)
+
+# Create a choropleth map with ggplot
+ggplot(marin_value, aes(fill = estimate)) + 
+  geom_sf()
+  
+# Set continuous viridis palettes for your map
+ggplot(marin_value, aes(fill = estimate, color = estimate)) + 
+  geom_sf() + 
+  scale_fill_viridis_c() +  
+  scale_color_viridis_c()
+
+# Set the color guide to FALSE and add a subtitle and caption to your map
+ggplot(marin_value, aes(fill = estimate, color = estimate)) + 
+  geom_sf() + 
+  scale_fill_viridis_c(labels = scales::dollar) +  
+  scale_color_viridis_c(guide = FALSE) + 
+  theme_minimal() + 
+  coord_sf(crs = 26911, datum = NA) + 
+  labs(title = "Median owner-occupied housing value by Census tract", 
+       subtitle = "Marin County, California", 
+       caption = "Data source: 2012-2016 ACS.\nData acquired with the R tidycensus package.", 
+       fill = "ACS estimate")
+ 
+#tutorial 
+#Graduated symbol maps
+library(sf)
+
+centers <- st_centroid(state_value)
+ggplot() + 
+  geom_sf(data = state_value, fill = "white") + 
+  geom_sf(data = centers, aes(size = estimate), shape = 21, 
+          fill = "lightblue", alpha = 0.7, show.legend = "point") + 
+  scale_size_continuous(range = c(1, 20))
+  
+#Faceted maps with ggplot2
+ggplot(dc_race, aes(fill = percent, color = percent)) + 
+  geom_sf() + 
+  coord_sf(datum = NA) + 
+  facet_wrap(~variable)  
+
+#Interactive maps with mapview
+library(mapview)
+mapview(cook_value, zcol = "estimate", legend = TRUE)
+
+
+#practice
+library(sf)
+
+# Generate point centers
+centers <- st_centroid(state_value)
+
+# Set size parameter and the size range
+ggplot() + 
+  geom_sf(data = state_value, fill = "white") + 
+  geom_sf(data = centers, aes(size = estimate), shape = 21, 
+          fill = "lightblue", alpha = 0.7, show.legend = "point") + 
+  scale_size_continuous(range = c(1, 20))
+
+
+# Check the first few rows of the loaded dataset dc_race
+head(dc_race)
+
+# Remove the gridlines and generate faceted maps
+ggplot(dc_race, aes(fill = percent, color = percent)) + 
+  geom_sf() + 
+  coord_sf(datum = NA) + 
+  facet_wrap(~variable)
+
+#Map the orange_value dataset interactively with the mapview() function.
+# Map the orange_value dataset interactively
+m <- mapview(orange_value)
+m@map
+
+#Use the zcol parameter to map your data by the estimate column.
+# Map your data by the estimate column
+m <- mapview(orange_value, 
+         zcol = "estimate")
+m@map
+
+
+#Add a legend to your mapview map with legend = TRUE.
+# Add a legend to your map
+m <- mapview(orange_value, 
+         zcol = "estimate", 
+         legend  = TRUE)
+m@map
+
+
+#tutorial
+#Generating random dots with sf
+#Key function for random point generation in sf: st_sample()
+
+dc_dots <- map(c("White", "Black", "Hispanic", "Asian"), function(group) {
+  dc_race %>%
+    filter(variable == group) %>%
+    st_sample(., size = .$value / 100) %>%
+    st_sf() %>%
+    mutate(group = group) 
+}) %>%
+  reduce(rbind)
+
+#Considerations for random dot generation
+#For faster plotting:
+
+dc_dots <- dc_dots %>%
+  group_by(group) %>%
+  summarize()
+
+#For more accurate visualizations:
+dc_dots_shuffle <- sample_frac(dc_dots, size = 1)
+
+# Basic dot-density mapping with sf
+plot(dc_dots_shuffle, key.pos = 1)
+
+#Ancillary data with tigris
+options(tigris_class = "sf")
+
+dc_roads <- roads("DC", "District of Columbia") %>%
+  filter(RTTYP %in% c("I", "S", "U"))
+dc_water <- area_water("DC", "District of Columbia")
+dc_boundary <- counties("DC", cb = TRUE)
+
+#Ancillary data with tigris
+plot(dc_water$geometry, col = "lightblue")
+
+#Dot-density mapping with ggplot2
+ggplot() + 
+  geom_sf(data = dc_boundary, color = NA, fill = "white") + 
+  geom_sf(data = dc_dots, aes(color = group, fill = group), size = 0.1) + 
+  geom_sf(data = dc_water, color = "lightblue", fill = "lightblue") + 
+  geom_sf(data = dc_roads, color = "grey") + 
+  coord_sf(crs = 26918, datum = NA) + 
+  scale_color_brewer(palette = "Set1", guide = FALSE) +
+  scale_fill_brewer(palette = "Set1") +
+  labs(title = "The racial geography of Washington, DC", 
+       subtitle = "2010 decennial U.S. Census", 
+       fill = "", 
+       caption = "1 dot = approximately 100 people.\nData acquired with 
+                  the R tidycensus and tigris packages.")
+
+
+#Let's practice!
+# Generate dots, create a group column, and group by group column
+dc_dots <- map(c("White", "Black", "Hispanic", "Asian"), function(group) {
+  dc_race %>%
+    filter(variable == group) %>%
+    st_sample(., size = .$value / 100) %>%
+    st_sf() %>%
+    mutate(group = group) 
+}) %>%
+  reduce(rbind) %>%
+  group_by(group) %>%
+  summarize()
+
+# Filter the DC roads object for major roads only
+dc_roads <- roads("DC", "District of Columbia") %>%
+  filter(RTTYP %in% c("I", "S", "U"))
+
+# Get an area water dataset for DC
+dc_water <- area_water("DC", "District of Columbia")
+
+# Get the boundary of DC
+dc_boundary <- counties("DC", cb = TRUE)
+
+# Plot your datasets and give your map an informative caption
+ggplot() + 
+  geom_sf(data = dc_boundary, color = NA, fill = "white") + 
+  geom_sf(data = dc_dots, aes(color = group, fill = group), size = 0.1) + 
+  geom_sf(data = dc_water, color = "lightblue", fill = "lightblue") + 
+  geom_sf(data = dc_roads, color = "grey") + 
+  coord_sf(crs = 26918, datum = NA) + 
+  scale_color_brewer(palette = "Set1", guide = FALSE) +
+  scale_fill_brewer(palette = "Set1") +
+  labs(title = "The racial geography of Washington, DC", 
+       subtitle = "2010 decennial U.S. Census", 
+       fill = "", 
+       caption = "1 dot = approximately 100 people.\nData acquired with the R tidycensus and tigris packages.")
+
+
+#tutorial
+#Other resources for demographic data in R
+#censusapi
+#ipumsr
+#cancensus
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
